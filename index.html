@@ -553,8 +553,7 @@
     font-weight: 500;
   }
 
-  .compare-table thead th:first-child,
-  .compare-table thead th:nth-child(2) { text-align: left; }
+  .compare-table thead th:first-child { text-align: left; }
 
   .compare-table tbody td {
     padding: 18px 12px;
@@ -572,11 +571,6 @@
     font-weight: 500;
     font-size: 14px;
     text-align: left;
-  }
-
-  .compare-table tbody td:nth-child(2) {
-    text-align: left;
-    color: var(--text-dim);
   }
 
   .compare-table tbody tr {
@@ -606,13 +600,6 @@
     font-weight: 700;
     color: var(--accent-2);
     letter-spacing: 0.05em;
-  }
-
-  .compare-table tfoot td:nth-child(2) {
-    text-align: left;
-    color: var(--text-mute);
-    font-size: 10px;
-    letter-spacing: 0.1em;
   }
 
   .badge {
@@ -853,7 +840,6 @@
     <table class="compare-table" id="compareTable">
       <thead>
         <tr>
-          <th>Empresa</th>
           <th>Tienda</th>
           <th>Recaudos</th>
           <th>Facturación</th>
@@ -1311,7 +1297,6 @@ function renderCompare() {
     const ticket = g.neg ? g.fac / g.neg : 0;
     const conv   = g.vis ? (g.neg / g.vis) * 100 : 0;
     return `<tr>
-      <td>${g.empresa}</td>
       <td><span class="badge">${g.tienda}</span></td>
       <td>${fmtCOP(g.rec)}</td>
       <td>${fmtCOP(g.fac)}</td>
@@ -1320,7 +1305,7 @@ function renderCompare() {
       <td>${fmtCOP(ticket)}</td>
       <td>${fmtPct(conv)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty-note">Sin datos para los filtros seleccionados</td></tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty-note">Sin datos para los filtros seleccionados</td></tr>`;
 
   // ── TOTALS ROW ──
   if (rows.length) {
@@ -1331,8 +1316,7 @@ function renderCompare() {
     const totTicket = totNeg ? totFac / totNeg : 0;
     const totConv   = totVis ? (totNeg / totVis) * 100 : 0;
     tfoot.innerHTML = `<tr>
-      <td>TOTAL</td>
-      <td>${rows.length} tienda${rows.length !== 1 ? 's' : ''}</td>
+      <td>TOTAL · ${rows.length} tienda${rows.length !== 1 ? 's' : ''}</td>
       <td>${fmtCOP(totRec)}</td>
       <td>${fmtCOP(totFac)}</td>
       <td>${fmtNum(totVis)}</td>
@@ -1453,11 +1437,11 @@ function catRows() {
 // Compare table data as rows (with totals)
 function compareRows() {
   if (!_compareData || !_compareData.length) return [];
-  const rows = [['Empresa','Tienda','Recaudos (COP)','Facturación (COP)','Visitas','Negocios','Ticket Prom. (COP)','Conversión (%)']];
+  const rows = [['Tienda','Recaudos (COP)','Facturación (COP)','Visitas','Negocios','Ticket Prom. (COP)','Conversión (%)']];
   _compareData.forEach(g => {
     const ticket = g.neg ? g.fac / g.neg : 0;
     const conv   = g.vis ? (g.neg / g.vis) * 100 : 0;
-    rows.push([g.empresa, g.tienda, g.rec, g.fac, g.vis, g.neg, Math.round(ticket), parseFloat(conv.toFixed(2))]);
+    rows.push([g.tienda, g.rec, g.fac, g.vis, g.neg, Math.round(ticket), parseFloat(conv.toFixed(2))]);
   });
   // Totals
   const totRec = _compareData.reduce((a, g) => a + g.rec, 0);
@@ -1466,7 +1450,7 @@ function compareRows() {
   const totNeg = _compareData.reduce((a, g) => a + g.neg, 0);
   const totTicket = totNeg ? Math.round(totFac / totNeg) : 0;
   const totConv   = totVis ? parseFloat(((totNeg / totVis) * 100).toFixed(2)) : 0;
-  rows.push(['TOTAL', `${_compareData.length} tiendas`, totRec, totFac, totVis, totNeg, totTicket, totConv]);
+  rows.push([`TOTAL (${_compareData.length} tiendas)`, totRec, totFac, totVis, totNeg, totTicket, totConv]);
   return rows;
 }
 
