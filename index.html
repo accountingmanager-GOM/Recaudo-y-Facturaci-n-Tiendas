@@ -11,6 +11,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<!-- SheetJS for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
   :root {
@@ -199,14 +201,15 @@
     color: var(--text-mute);
   }
 
+  /* ── FILTER ROW ── */
   .filter-row {
     display: flex;
     flex-wrap: wrap;
     gap: 18px;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 32px;
-    padding: 14px 18px;
-    border-radius: 999px;
+    padding: 18px 22px;
+    border-radius: 22px;
     background: var(--glass);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -215,8 +218,8 @@
 
   .filter-block {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .filter-block + .filter-block {
@@ -230,6 +233,69 @@
     letter-spacing: 0.18em;
     color: var(--text-mute);
     text-transform: uppercase;
+  }
+
+  /* Multi-select checkboxes */
+  .filter-check-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .filter-check-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .filter-check-label:hover {
+    color: var(--text);
+    border-color: var(--glass-border);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .filter-check-label input[type="checkbox"] {
+    display: none;
+  }
+
+  .filter-check-label.checked {
+    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    color: var(--navy);
+    font-weight: 600;
+    border-color: rgba(255,255,255,0.5);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  .check-tick {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 9px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+  }
+
+  .filter-check-label.checked .check-tick {
+    opacity: 1;
+    background: var(--navy);
+    border-color: var(--navy);
+    color: white;
   }
 
   .filter-group {
@@ -264,6 +330,8 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.5) inset;
   }
 
+  .date-row { display: flex; align-items: center; gap: 8px; }
+
   .date-input {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -292,6 +360,7 @@
   }
   .clear-date:hover { color: var(--text); }
 
+  /* ── KPI ── */
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -426,6 +495,46 @@
   .chart-wrap { position: relative; height: 280px; }
   .chart-wrap.tall { height: 360px; }
 
+  /* ── EXPORT BUTTONS ── */
+  .export-btns {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(10px);
+  }
+
+  .btn-export:hover {
+    background: var(--glass-strong);
+    color: var(--text);
+    border-color: var(--glass-border-strong);
+  }
+
+  .btn-export.success {
+    border-color: rgba(74, 222, 128, 0.4);
+    color: var(--positive);
+    background: rgba(74, 222, 128, 0.08);
+  }
+
+  .btn-export svg { width: 13px; height: 13px; }
+
+  /* ── COMPARE TABLE ── */
   .compare-table {
     width: 100%;
     border-collapse: collapse;
@@ -476,6 +585,34 @@
 
   .compare-table tbody tr:hover {
     background: rgba(255, 255, 255, 0.03);
+  }
+
+  /* Totals row */
+  .compare-table tfoot td {
+    padding: 16px 12px;
+    border-top: 1px solid var(--glass-border-strong);
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-2);
+    background: rgba(91, 163, 245, 0.06);
+  }
+
+  .compare-table tfoot td:first-child {
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: 0.05em;
+  }
+
+  .compare-table tfoot td:nth-child(2) {
+    text-align: left;
+    color: var(--text-mute);
+    font-size: 10px;
+    letter-spacing: 0.1em;
   }
 
   .badge {
@@ -550,22 +687,28 @@
   </header>
 
   <div class="filter-row">
+    <!-- EMPRESA: multi-select -->
     <div class="filter-block">
       <span class="filter-label">Empresa</span>
-      <div class="filter-group" id="empresaFilters"></div>
+      <div class="filter-check-group" id="empresaFilters"></div>
     </div>
 
+    <!-- TIENDA: multi-select -->
     <div class="filter-block">
       <span class="filter-label">Tienda</span>
-      <div class="filter-group" id="tiendaFilters"></div>
+      <div class="filter-check-group" id="tiendaFilters"></div>
     </div>
 
+    <!-- DÍA -->
     <div class="filter-block">
       <span class="filter-label">Día</span>
-      <input type="date" class="date-input" id="dateFilter">
-      <button class="clear-date" id="clearDate" title="Quitar filtro de día">Limpiar</button>
+      <div class="date-row">
+        <input type="date" class="date-input" id="dateFilter">
+        <button class="clear-date" id="clearDate" title="Quitar filtro de día">Limpiar</button>
+      </div>
     </div>
 
+    <!-- PERIODO -->
     <div class="filter-block">
       <span class="filter-label">Periodo</span>
       <div class="filter-group" id="periodoFilters">
@@ -615,6 +758,16 @@
         <div class="card-eyebrow">Serie de Tiempo</div>
         <div class="card-title">Recaudos vs. Facturación por Día</div>
       </div>
+      <div class="export-btns">
+        <button class="btn-export" id="btnCopyTrend" title="Copiar datos para pegar en Excel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copiar
+        </button>
+        <button class="btn-export" id="btnExcelTrend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Excel
+        </button>
+      </div>
     </div>
     <div class="chart-wrap tall"><canvas id="chartTrend"></canvas></div>
   </div>
@@ -630,6 +783,16 @@
         <div>
           <div class="card-eyebrow">Recaudos</div>
           <div class="card-title">Distribución por Medio de Pago</div>
+        </div>
+        <div class="export-btns">
+          <button class="btn-export" id="btnCopyMedios">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copiar
+          </button>
+          <button class="btn-export" id="btnExcelMedios">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Excel
+          </button>
         </div>
       </div>
       <div class="chart-wrap"><canvas id="chartMedios"></canvas></div>
@@ -651,6 +814,16 @@
         <div class="card-eyebrow">Facturación</div>
         <div class="card-title">Por Línea de Producto</div>
       </div>
+      <div class="export-btns">
+        <button class="btn-export" id="btnCopyCat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copiar
+        </button>
+        <button class="btn-export" id="btnExcelCat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Excel
+        </button>
+      </div>
     </div>
     <div class="chart-wrap tall"><canvas id="chartCategorias"></canvas></div>
   </div>
@@ -660,6 +833,23 @@
     <span class="hint">Rendimiento agregado</span>
   </div>
   <div class="card glass">
+    <div class="card-header" style="margin-bottom:0; border-bottom:none;">
+      <div></div>
+      <div class="export-btns">
+        <button class="btn-export" id="btnCopyTable">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copiar tabla
+        </button>
+        <button class="btn-export" id="btnExcelTable">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Descargar Excel
+        </button>
+        <button class="btn-export" id="btnExcelAll">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar todo
+        </button>
+      </div>
+    </div>
     <table class="compare-table" id="compareTable">
       <thead>
         <tr>
@@ -674,6 +864,7 @@
         </tr>
       </thead>
       <tbody id="compareBody"></tbody>
+      <tfoot id="compareFoot"></tfoot>
     </table>
   </div>
 
@@ -694,7 +885,14 @@ GRUPO ONLY MUEBLES SAS,SUR,5/5/2026,12/30/1899,100000,200000,300000,400000,50000
 const PALETTE = ['#5BA3F5','#7DD3FC','#A78BFA','#67E8F9','#FBBF24','#4ADE80','#F87171','#94A3B8','#C084FC','#22D3EE'];
 
 let RAW = [], FILTERED = [], CHARTS = {};
-let FILTERS = { empresa: 'all', tienda: 'all', periodo: 'all', date: null };
+// Multi-select: sets of selected values; empty set = all selected
+let FILTERS = { empresas: new Set(), tiendas: new Set(), periodo: 'all', date: null };
+
+// ── Cached data for exports ──
+let _trendData   = null;
+let _mediosData  = null;
+let _catData     = null;
+let _compareData = null;
 
 const fmtCOP = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
 const fmtCOPshort = n => {
@@ -724,6 +922,7 @@ const dateKey = d => {
   return `${y}-${m}-${dd}`;
 };
 
+// ── LOAD ──
 async function loadData() {
   let csv = SAMPLE_CSV;
   let isLive = false;
@@ -757,29 +956,19 @@ async function loadData() {
   applyFilters();
 }
 
+// ── BUILD FILTER BUTTONS (multi-select) ──
 function buildFilterButtons() {
-  const empresas = ['all', ...new Set(RAW.map(r => r.EMPRESA))];
-  const tiendas  = ['all', ...new Set(RAW.map(r => r.TIENDA))];
+  const empresas = [...new Set(RAW.map(r => r.EMPRESA))];
+  const tiendas  = [...new Set(RAW.map(r => r.TIENDA))];
 
-  const empF = document.getElementById('empresaFilters');
-  empF.innerHTML = '';
-  empresas.forEach(e => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn' + (e === FILTERS.empresa ? ' active' : '');
-    btn.textContent = e === 'all' ? 'Todas' : e;
-    btn.title = e;
-    btn.onclick = () => { FILTERS.empresa = e; applyFilters(); };
-    empF.appendChild(btn);
+  buildCheckGroup('empresaFilters', empresas, FILTERS.empresas, val => {
+    toggleSet(FILTERS.empresas, val);
+    applyFilters();
   });
 
-  const tiF = document.getElementById('tiendaFilters');
-  tiF.innerHTML = '';
-  tiendas.forEach(t => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn' + (t === FILTERS.tienda ? ' active' : '');
-    btn.textContent = t === 'all' ? 'Todas' : t;
-    btn.onclick = () => { FILTERS.tienda = t; applyFilters(); };
-    tiF.appendChild(btn);
+  buildCheckGroup('tiendaFilters', tiendas, FILTERS.tiendas, val => {
+    toggleSet(FILTERS.tiendas, val);
+    applyFilters();
   });
 
   document.querySelectorAll('#periodoFilters .filter-btn').forEach(b => {
@@ -815,19 +1004,47 @@ function buildFilterButtons() {
   };
 }
 
-function applyFilters() {
-  const empresas = ['all', ...new Set(RAW.map(r => r.EMPRESA))];
-  document.querySelectorAll('#empresaFilters .filter-btn').forEach((b, i) => {
-    b.classList.toggle('active', empresas[i] === FILTERS.empresa);
-  });
-  const tiendas = ['all', ...new Set(RAW.map(r => r.TIENDA))];
-  document.querySelectorAll('#tiendaFilters .filter-btn').forEach((b, i) => {
-    b.classList.toggle('active', tiendas[i] === FILTERS.tienda);
-  });
+function buildCheckGroup(containerId, values, selectedSet, onChange) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
 
+  // "Todas" option
+  const allLabel = document.createElement('label');
+  allLabel.className = 'filter-check-label' + (selectedSet.size === 0 ? ' checked' : '');
+  allLabel.innerHTML = `<span class="check-tick">${selectedSet.size === 0 ? '✓' : ''}</span> Todas`;
+  allLabel.onclick = () => {
+    selectedSet.clear();
+    buildCheckGroup(containerId, values, selectedSet, onChange);
+    onChange(null);
+  };
+  container.appendChild(allLabel);
+
+  values.forEach(val => {
+    const lbl = document.createElement('label');
+    const isChecked = selectedSet.has(val);
+    lbl.className = 'filter-check-label' + (isChecked ? ' checked' : '');
+    lbl.innerHTML = `<span class="check-tick">${isChecked ? '✓' : ''}</span> ${val}`;
+    lbl.onclick = () => onChange(val);
+    container.appendChild(lbl);
+  });
+}
+
+function toggleSet(set, val) {
+  if (val === null) { set.clear(); return; }
+  if (set.has(val)) set.delete(val);
+  else set.add(val);
+  // Rebuild buttons
+  const empresas = [...new Set(RAW.map(r => r.EMPRESA))];
+  const tiendas  = [...new Set(RAW.map(r => r.TIENDA))];
+  buildCheckGroup('empresaFilters', empresas, FILTERS.empresas, v => { toggleSet(FILTERS.empresas, v); applyFilters(); });
+  buildCheckGroup('tiendaFilters',  tiendas,  FILTERS.tiendas,  v => { toggleSet(FILTERS.tiendas, v);  applyFilters(); });
+}
+
+// ── APPLY FILTERS ──
+function applyFilters() {
   let data = [...RAW];
-  if (FILTERS.empresa !== 'all') data = data.filter(r => r.EMPRESA === FILTERS.empresa);
-  if (FILTERS.tienda  !== 'all') data = data.filter(r => r.TIENDA  === FILTERS.tienda);
+  if (FILTERS.empresas.size > 0) data = data.filter(r => FILTERS.empresas.has(r.EMPRESA));
+  if (FILTERS.tiendas.size  > 0) data = data.filter(r => FILTERS.tiendas.has(r.TIENDA));
 
   if (FILTERS.date) {
     data = data.filter(r => dateKey(r._fecha) === FILTERS.date);
@@ -870,6 +1087,7 @@ function applyFilters() {
   renderAll();
 }
 
+// ── RENDER ──
 function renderAll() {
   if (!FILTERED.length) {
     ['kpiRecaudos','kpiFacturacion','kpiVisitas','kpiNegocios'].forEach(id => document.getElementById(id).textContent = '—');
@@ -878,6 +1096,7 @@ function renderAll() {
     Object.values(CHARTS).forEach(c => c && c.destroy());
     CHARTS = {};
     document.getElementById('compareBody').innerHTML = `<tr><td colspan="8" class="empty-note">Sin datos para los filtros seleccionados</td></tr>`;
+    document.getElementById('compareFoot').innerHTML = '';
     return;
   }
 
@@ -913,6 +1132,8 @@ function renderTrend() {
   });
   const dates  = Object.keys(byDate).sort();
   const labels = dates.map(d => { const [y,m,dd] = d.split('-'); return dd + '/' + m; });
+
+  _trendData = { labels, dates, byDate };
 
   if (CHARTS.trend) CHARTS.trend.destroy();
   CHARTS.trend = new Chart(document.getElementById('chartTrend'), {
@@ -968,6 +1189,8 @@ function renderMedios() {
     .map(m => ({ ...m, val: FILTERED.reduce((a, r) => a + (r[m.k] || 0), 0) }))
     .sort((a, b) => b.val - a.val);
 
+  _mediosData = sorted;
+
   if (CHARTS.medios) CHARTS.medios.destroy();
   CHARTS.medios = new Chart(document.getElementById('chartMedios'), {
     type: 'bar',
@@ -979,7 +1202,13 @@ function renderMedios() {
         borderRadius: 4, barThickness: 18
       }]
     },
-    options: chartOpts({ indexAxis: 'y', plugins: { legend: { display: false } }, x: { ticks: { callback: v => fmtCOPshort(v) } } })
+    options: chartOpts({
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      // FIX: show exact COP value in tooltip for medios
+      tooltipLabel: c => `  ${fmtCOP(c.parsed.x)}`,
+      x: { ticks: { callback: v => fmtCOPshort(v) } }
+    })
   });
 }
 
@@ -1026,18 +1255,25 @@ function renderOrigen() {
 }
 
 function renderCategorias() {
+  // FIX: Added MANUFACTURADOS, NACIONALES, IMPORTADOS as additional lines
+  // The "Por Línea de Producto" should include all product-level columns
   const cats = [
-    { k: 'COLCHONES',    label: 'Colchones' },
-    { k: 'DECORACIÓN',   label: 'Decoración' },
-    { k: 'ILUMINACIÓN',  label: 'Iluminación' },
-    { k: 'ROPA DE CAMA', label: 'Ropa de Cama' },
-    { k: 'KIDS & BABIES',label: 'Kids & Babies' },
-    { k: 'AROMAS',       label: 'Aromas' },
-    { k: 'FUNTASTIK',    label: 'Funtastik' }
+    { k: 'MANUFACTURADOS', label: 'Manufacturados' },
+    { k: 'NACIONALES',     label: 'Nacionales' },
+    { k: 'IMPORTADOS',     label: 'Importados' },
+    { k: 'COLCHONES',     label: 'Colchones' },
+    { k: 'DECORACIÓN',    label: 'Decoración' },
+    { k: 'ILUMINACIÓN',   label: 'Iluminación' },
+    { k: 'ROPA DE CAMA',  label: 'Ropa de Cama' },
+    { k: 'KIDS & BABIES', label: 'Kids & Babies' },
+    { k: 'AROMAS',        label: 'Aromas' },
+    { k: 'FUNTASTIK',     label: 'Funtastik' }
   ];
   const sorted = cats
     .map(c => ({ ...c, val: FILTERED.reduce((a, r) => a + (r[c.k] || 0), 0) }))
     .sort((a, b) => b.val - a.val);
+
+  _catData = sorted;
 
   if (CHARTS.cat) CHARTS.cat.destroy();
   CHARTS.cat = new Chart(document.getElementById('chartCategorias'), {
@@ -1065,8 +1301,12 @@ function renderCompare() {
     groups[k].neg += r['CANTIDAD NEGOCIOS'];
   });
 
-  const rows  = Object.values(groups).sort((a, b) => b.fac - a.fac);
+  const rows = Object.values(groups).sort((a, b) => b.fac - a.fac);
+  _compareData = rows;
+
   const tbody = document.getElementById('compareBody');
+  const tfoot = document.getElementById('compareFoot');
+
   tbody.innerHTML = rows.length ? rows.map(g => {
     const ticket = g.neg ? g.fac / g.neg : 0;
     const conv   = g.vis ? (g.neg / g.vis) * 100 : 0;
@@ -1081,8 +1321,31 @@ function renderCompare() {
       <td>${fmtPct(conv)}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="8" class="empty-note">Sin datos para los filtros seleccionados</td></tr>`;
+
+  // ── TOTALS ROW ──
+  if (rows.length) {
+    const totRec = rows.reduce((a, g) => a + g.rec, 0);
+    const totFac = rows.reduce((a, g) => a + g.fac, 0);
+    const totVis = rows.reduce((a, g) => a + g.vis, 0);
+    const totNeg = rows.reduce((a, g) => a + g.neg, 0);
+    const totTicket = totNeg ? totFac / totNeg : 0;
+    const totConv   = totVis ? (totNeg / totVis) * 100 : 0;
+    tfoot.innerHTML = `<tr>
+      <td>TOTAL</td>
+      <td>${rows.length} tienda${rows.length !== 1 ? 's' : ''}</td>
+      <td>${fmtCOP(totRec)}</td>
+      <td>${fmtCOP(totFac)}</td>
+      <td>${fmtNum(totVis)}</td>
+      <td>${fmtNum(totNeg)}</td>
+      <td>${fmtCOP(totTicket)}</td>
+      <td>${fmtPct(totConv)}</td>
+    </tr>`;
+  } else {
+    tfoot.innerHTML = '';
+  }
 }
 
+// ── TOOLTIP HELPERS ──
 function tooltipStyle(callbacks = {}) {
   return {
     backgroundColor: 'rgba(15, 30, 58, 0.92)',
@@ -1100,6 +1363,10 @@ function tooltipStyle(callbacks = {}) {
 }
 
 function chartOpts(extra = {}) {
+  // Allow custom tooltip label callback via extra.tooltipLabel
+  const tooltipLabelFn = extra.tooltipLabel ||
+    (c => `  ${c.dataset.label || ''}: ${fmtCOP(c.parsed.y ?? c.parsed.x ?? c.parsed)}`);
+
   const base = {
     responsive: true,
     maintainAspectRatio: false,
@@ -1113,9 +1380,7 @@ function chartOpts(extra = {}) {
           usePointStyle: true, pointStyle: 'circle', padding: 14
         }
       },
-      tooltip: tooltipStyle({
-        label: c => `  ${c.dataset.label || ''}: ${fmtCOP(c.parsed.y ?? c.parsed.x ?? c.parsed)}`
-      })
+      tooltip: tooltipStyle({ label: tooltipLabelFn })
     },
     scales: {
       x: {
@@ -1137,6 +1402,118 @@ function chartOpts(extra = {}) {
   return base;
 }
 
+// ══════════════════════════════════════════════
+// EXPORT UTILITIES
+// ══════════════════════════════════════════════
+
+// Copy tab-separated data to clipboard (pastes cleanly into Excel/Sheets)
+function copyToClipboard(rows, btn) {
+  const text = rows.map(r => r.join('\t')).join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.classList.add('success');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ¡Copiado!`;
+    setTimeout(() => { btn.classList.remove('success'); btn.innerHTML = orig; }, 2200);
+  }).catch(() => alert('No se pudo copiar. Intenta con el botón Excel.'));
+}
+
+// Download as xlsx using SheetJS
+function downloadExcel(sheetData, filename) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+  XLSX.writeFile(wb, filename + '.xlsx');
+}
+
+// Trend data as rows
+function trendRows() {
+  if (!_trendData) return [];
+  const { dates, byDate } = _trendData;
+  const rows = [['Fecha', 'Recaudos (COP)', 'Facturación (COP)']];
+  dates.forEach(d => rows.push([d, byDate[d].rec, byDate[d].fac]));
+  return rows;
+}
+
+// Medios data as rows
+function mediosRows() {
+  if (!_mediosData) return [];
+  const rows = [['Medio de Pago', 'Total (COP)']];
+  _mediosData.forEach(m => rows.push([m.label, m.val]));
+  return rows;
+}
+
+// Categorias data as rows
+function catRows() {
+  if (!_catData) return [];
+  const rows = [['Línea / Categoría', 'Total (COP)']];
+  _catData.forEach(c => rows.push([c.label, c.val]));
+  return rows;
+}
+
+// Compare table data as rows (with totals)
+function compareRows() {
+  if (!_compareData || !_compareData.length) return [];
+  const rows = [['Empresa','Tienda','Recaudos (COP)','Facturación (COP)','Visitas','Negocios','Ticket Prom. (COP)','Conversión (%)']];
+  _compareData.forEach(g => {
+    const ticket = g.neg ? g.fac / g.neg : 0;
+    const conv   = g.vis ? (g.neg / g.vis) * 100 : 0;
+    rows.push([g.empresa, g.tienda, g.rec, g.fac, g.vis, g.neg, Math.round(ticket), parseFloat(conv.toFixed(2))]);
+  });
+  // Totals
+  const totRec = _compareData.reduce((a, g) => a + g.rec, 0);
+  const totFac = _compareData.reduce((a, g) => a + g.fac, 0);
+  const totVis = _compareData.reduce((a, g) => a + g.vis, 0);
+  const totNeg = _compareData.reduce((a, g) => a + g.neg, 0);
+  const totTicket = totNeg ? Math.round(totFac / totNeg) : 0;
+  const totConv   = totVis ? parseFloat(((totNeg / totVis) * 100).toFixed(2)) : 0;
+  rows.push(['TOTAL', `${_compareData.length} tiendas`, totRec, totFac, totVis, totNeg, totTicket, totConv]);
+  return rows;
+}
+
+// All data export (multi-sheet)
+function exportAll() {
+  const wb = XLSX.utils.book_new();
+  const add = (data, name) => {
+    if (data.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
+  };
+  add(trendRows(),   'Tendencia Diaria');
+  add(mediosRows(),  'Medios de Pago');
+  add(catRows(),     'Líneas de Producto');
+  add(compareRows(), 'Comparativo Tiendas');
+
+  // Raw filtered data
+  if (FILTERED.length) {
+    const cols = Object.keys(FILTERED[0]).filter(k => !k.startsWith('_'));
+    const rawRows = [cols, ...FILTERED.map(r => cols.map(c => r[c]))];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rawRows), 'Datos Crudos');
+  }
+
+  XLSX.writeFile(wb, 'OnlyHome_Dashboard_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// ── WIRE UP EXPORT BUTTONS ──
+function wireExports() {
+  // Trend
+  document.getElementById('btnCopyTrend').onclick = function() { copyToClipboard(trendRows(), this); };
+  document.getElementById('btnExcelTrend').onclick = () => downloadExcel(trendRows(), 'Tendencia_Diaria');
+
+  // Medios
+  document.getElementById('btnCopyMedios').onclick = function() { copyToClipboard(mediosRows(), this); };
+  document.getElementById('btnExcelMedios').onclick = () => downloadExcel(mediosRows(), 'Medios_de_Pago');
+
+  // Categorias
+  document.getElementById('btnCopyCat').onclick = function() { copyToClipboard(catRows(), this); };
+  document.getElementById('btnExcelCat').onclick = () => downloadExcel(catRows(), 'Lineas_Producto');
+
+  // Compare table
+  document.getElementById('btnCopyTable').onclick = function() { copyToClipboard(compareRows(), this); };
+  document.getElementById('btnExcelTable').onclick = () => downloadExcel(compareRows(), 'Comparativo_Tiendas');
+
+  // Export all
+  document.getElementById('btnExcelAll').onclick = exportAll;
+}
+
+wireExports();
 loadData();
 setInterval(loadData, 5 * 60 * 1000);
 </script>
