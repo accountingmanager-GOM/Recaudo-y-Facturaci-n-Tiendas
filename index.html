@@ -573,7 +573,7 @@
         <button class="filter-btn" data-periodo="7">7d</button>
         <button class="filter-btn" data-periodo="30">30d</button>
         <button class="filter-btn" data-periodo="90">90d</button>
-        <button class="filter-btn active" data-periodo="all">Todo</button>
+        <button class="filter-btn" data-periodo="month">Mes actual</button> <button class="filter-btn" data-periodo="prevmonth">Mes anterior</button> <button class="filter-btn" data-periodo="3months">Últ. 3 meses</button> <button class="filter-btn" data-periodo="ytd">Año actual</button> <button class="filter-btn active" data-periodo="all">Todo</button>
       </div>
     </div>
   </div>
@@ -762,7 +762,7 @@ function buildFilterButtons() {
   empresas.forEach(e => {
     const btn = document.createElement('button');
     btn.className = 'filter-btn' + (e === FILTERS.empresa ? ' active' : '');
-    btn.textContent = e === 'all' ? 'Todas' : e.replace('GRUPO ONLY MUEBLES SAS', 'Only Muebles').replace('GRUPO ', '');
+    btn.textContent = e === 'all' ? 'Todas' : e;
     btn.title = e;
     btn.onclick = () => { FILTERS.empresa = e; applyFilters(); };
     empF.appendChild(btn);
@@ -1044,7 +1044,7 @@ function renderCompare() {
     const ticket = g.neg ? g.fac / g.neg : 0;
     const conv = g.vis ? (g.neg / g.vis) * 100 : 0;
     return `<tr>
-      <td>${g.empresa.replace('GRUPO ONLY MUEBLES SAS', 'Only Muebles')}</td>
+      <td>${g.empresa}</td>
       <td><span class="badge">${g.tienda}</span></td>
       <td>${fmtCOP(g.rec)}</td>
       <td>${fmtCOP(g.fac)}</td>
@@ -1073,10 +1073,8 @@ function tooltipStyle(callbacks = {}) {
 }
 
 function chartOpts(extra = {}) {
-  const base = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+const days = parseInt(FILTERS.periodo, 10);    responsive: true,
+const p = FILTERS.periodo; if (p === 'month' && data.length) { const md = new Date(Math.max(...data.map(r => r._fecha.getTime()))); data = data.filter(r => r._fecha.getMonth() === md.getMonth() && r._fecha.getFullYear() === md.getFullYear()); return; } if (p === 'prevmonth' && data.length) { const md = new Date(Math.max(...data.map(r => r._fecha.getTime()))); const pm = new Date(md.getFullYear(), md.getMonth()-1, 1); data = data.filter(r => r._fecha.getMonth() === pm.getMonth() && r._fecha.getFullYear() === pm.getFullYear()); return; } if (p === '3months' && data.length) { const md = new Date(Math.max(...data.map(r => r._fecha.getTime()))); const co = new Date(md.getFullYear(), md.getMonth()-2, 1); data = data.filter(r => r._fecha >= co); return; } if (p === 'ytd' && data.length) { const md = new Date(Math.max(...data.map(    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: {
         position: 'top', align: 'end',
