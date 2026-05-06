@@ -1279,8 +1279,8 @@ function renderCategorias() {
 function renderCompare() {
   const groups = {};
   FILTERED.forEach(r => {
-    const k = r.EMPRESA + '|' + r.TIENDA;
-    if (!groups[k]) groups[k] = { empresa: r.EMPRESA, tienda: r.TIENDA, rec: 0, fac: 0, vis: 0, neg: 0 };
+    const k = r.TIENDA;
+    if (!groups[k]) groups[k] = { tienda: r.TIENDA, rec: 0, fac: 0, vis: 0, neg: 0 };
     groups[k].rec += r['TOTAL MEDIOS'];
     groups[k].fac += r['TOTAL FACTURACIÓN'];
     groups[k].vis += r['CANTIDAD VISITAS CLIENTES'];
