@@ -665,7 +665,7 @@
   <header class="header">
     <div class="brand">
       <span class="eyebrow">Grupo Only Muebles · Tablero Ejecutivo</span>
-      <h1>Recaudos &amp; <em>Facturación</em></h1>
+      <h1>Recaudos &amp; <em>Negocios</em></h1>
     </div>
     <div class="meta">
       <span class="pill-live"><span class="dot"></span>En vivo · Google Sheets</span>
@@ -719,9 +719,9 @@
       <span class="kpi-meta">Efectivo + Tarjetas + Crédito + Transferencias</span>
     </div>
     <div class="kpi glass featured">
-      <span class="kpi-label">Facturación · Tienda</span>
+      <span class="kpi-label">Negocios · Tienda</span>
       <span class="kpi-value" id="kpiFacturacion">—</span>
-      <span class="kpi-meta">Solo ventas desde tienda</span>
+      <span class="kpi-meta">Solo negocios desde tienda</span>
     </div>
     <div class="kpi glass">
       <span class="kpi-label">Visitas Clientes</span>
@@ -743,7 +743,7 @@
     <div class="card-header">
       <div>
         <div class="card-eyebrow">Serie de Tiempo</div>
-        <div class="card-title">Recaudos vs. Facturación por Día</div>
+        <div class="card-title">Recaudos vs. Negocios por Día</div>
       </div>
       <div class="export-btns">
         <button class="btn-export" id="btnCopyTrend" title="Copiar datos para pegar en Excel">
@@ -787,7 +787,7 @@
     <div class="card glass">
       <div class="card-header">
         <div>
-          <div class="card-eyebrow">Facturación</div>
+          <div class="card-eyebrow">Negocios</div>
           <div class="card-title">Por Origen de Producto</div>
         </div>
       </div>
@@ -798,7 +798,7 @@
   <div class="card glass" style="margin-bottom: 28px;">
     <div class="card-header">
       <div>
-        <div class="card-eyebrow">Facturación</div>
+        <div class="card-eyebrow">Negocios</div>
         <div class="card-title">Por Línea de Producto</div>
       </div>
       <div class="export-btns">
@@ -842,7 +842,7 @@
         <tr>
           <th>Tienda</th>
           <th>Recaudos</th>
-          <th>Facturación</th>
+          <th>Negocios (COP)</th>
           <th>Visitas</th>
           <th>Negocios</th>
           <th>Ticket Prom.</th>
@@ -1142,7 +1142,7 @@ function renderTrend() {
           pointRadius: 4, pointBackgroundColor: '#5BA3F5', pointBorderColor: '#050B18', pointBorderWidth: 2
         },
         {
-          label: 'Facturación',
+          label: 'Negocios',
           data: dates.map(d => byDate[d].fac),
           borderColor: '#7DD3FC',
           backgroundColor: ctx => {
@@ -1413,7 +1413,7 @@ function downloadExcel(sheetData, filename) {
 function trendRows() {
   if (!_trendData) return [];
   const { dates, byDate } = _trendData;
-  const rows = [['Fecha', 'Recaudos (COP)', 'Facturación (COP)']];
+  const rows = [['Fecha', 'Recaudos (COP)', 'Negocios (COP)']];
   dates.forEach(d => rows.push([d, byDate[d].rec, byDate[d].fac]));
   return rows;
 }
@@ -1437,7 +1437,7 @@ function catRows() {
 // Compare table data as rows (with totals)
 function compareRows() {
   if (!_compareData || !_compareData.length) return [];
-  const rows = [['Tienda','Recaudos (COP)','Facturación (COP)','Visitas','Negocios','Ticket Prom. (COP)','Conversión (%)']];
+  const rows = [['Tienda','Recaudos (COP)','Negocios (COP)','Visitas','Negocios','Ticket Prom. (COP)','Conversión (%)']];
   _compareData.forEach(g => {
     const ticket = g.neg ? g.fac / g.neg : 0;
     const conv   = g.vis ? (g.neg / g.vis) * 100 : 0;
