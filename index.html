@@ -1479,10 +1479,17 @@ function renderProyeccion() {
   // Guardar para exportación
   _proyeccionData = { items: itemsConTotal, diasTranscurridos, diasTotalesMes, currentMonth };
 
-  // Pill informativa
+  if (CHARTS.proyeccion) CHARTS.proyeccion.destroy();
+
+  if (!items.length) {
+    CHARTS.proyeccion = null;
+    return;
+  }
+
+  // Pill: total como informativo, no dentro de la gráfica
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('proyeccionMeta').textContent =
-    `Día ${diasTranscurridos} de ${diasTotalesMes} · ${meses[currentMonth]} · Faltan ${diasRestantes} días`;
+    `Día ${diasTranscurridos} de ${diasTotalesMes} · ${meses[currentMonth]} · Faltan ${diasRestantes} días · Total proyectado: ${fmtCOPshort(totalProy)}`;
 
   if (CHARTS.proyeccion) CHARTS.proyeccion.destroy();
 
@@ -1491,52 +1498,42 @@ function renderProyeccion() {
     return;
   }
 
-  // Colores: tiendas en azul/amarillo, TOTAL en tono diferenciado
-  const bgReal = itemsConTotal.map(p =>
-    p.tienda === 'TOTAL' ? 'rgba(74, 222, 128, 0.75)' : '#5BA3F5'
-  );
-  const bgProy = itemsConTotal.map(p =>
-    p.tienda === 'TOTAL' ? 'rgba(74, 222, 128, 0.15)' : 'rgba(251, 191, 36, 0.18)'
-  );
-  const bdProy = itemsConTotal.map(p =>
-    p.tienda === 'TOTAL' ? '#4ADE80' : '#FBBF24'
-  );
-
   CHARTS.proyeccion = new Chart(document.getElementById('chartProyeccion'), {
     type: 'bar',
     data: {
-      labels: itemsConTotal.map(p => p.tienda),
+      labels: items.map(p => p.tienda),
       datasets: [
         {
           label: 'Negocios reales (acumulado mes)',
-          data: itemsConTotal.map(p => p.negMes),
-          backgroundColor: bgReal,
-          borderRadius: 6,
-          barPercentage: 0.7,
-          categoryPercentage: 0.75,
+          data: items.map(p => p.negMes),
+          backgroundColor: '#5BA3F5',
+          borderRadius: 4,
+          barPercentage: 0.6,
+          categoryPercentage: 0.8,
           order: 2
         },
         {
           label: 'Proyección fin de mes',
-          data: itemsConTotal.map(p => p.proyeccion),
-          backgroundColor: bgProy,
-          borderColor: bdProy,
+          data: items.map(p => p.proyeccion),
+          backgroundColor: 'rgba(251, 191, 36, 0.18)',
+          borderColor: '#FBBF24',
           borderWidth: 2,
-          borderRadius: 6,
-          barPercentage: 0.7,
-          categoryPercentage: 0.75,
+          borderRadius: 4,
+          barPercentage: 0.6,
+          categoryPercentage: 0.8,
           order: 1
         }
       ]
     },
     options: chartOpts({
+      indexAxis: 'y',
       plugins: {
         legend: { display: true },
         tooltip: tooltipStyle({
-          label: c => `  ${c.dataset.label}: ${fmtCOP(c.parsed.y)}`
+          label: c => `  ${c.dataset.label}: ${fmtCOP(c.parsed.x)}`
         })
       },
-      y: { ticks: { callback: v => fmtCOPshort(v) } }
+      x: { ticks: { callback: v => fmtCOPshort(v) } }
     })
   });
 }
