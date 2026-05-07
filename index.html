@@ -1498,6 +1498,10 @@ function renderProyeccion() {
     return;
   }
 
+  // Altura dinámica: 72px por tienda garantiza que todas se vean en móvil y PC
+  const chartWrap = document.getElementById('chartProyeccion').parentElement;
+  chartWrap.style.height = Math.max(220, items.length * 72) + 'px';
+
   CHARTS.proyeccion = new Chart(document.getElementById('chartProyeccion'), {
     type: 'bar',
     data: {
@@ -1508,8 +1512,8 @@ function renderProyeccion() {
           data: items.map(p => p.negMes),
           backgroundColor: '#5BA3F5',
           borderRadius: 4,
-          barPercentage: 0.6,
-          categoryPercentage: 0.55,
+          barPercentage: 0.82,
+          categoryPercentage: 0.5,
           order: 2
         },
         {
@@ -1519,8 +1523,8 @@ function renderProyeccion() {
           borderColor: '#8B5CF6',
           borderWidth: 2,
           borderRadius: 4,
-          barPercentage: 0.6,
-          categoryPercentage: 0.55,
+          barPercentage: 0.82,
+          categoryPercentage: 0.5,
           order: 1
         }
       ]
@@ -1533,7 +1537,12 @@ function renderProyeccion() {
           label: c => `  ${c.dataset.label}: ${fmtCOP(c.parsed.x)}`
         })
       },
-      x: { ticks: { callback: v => fmtCOPshort(v) } }
+      x: {
+        ticks: {
+          callback: v => fmtCOPshort(v),
+          maxTicksLimit: 5
+        }
+      }
     })
   });
 }
