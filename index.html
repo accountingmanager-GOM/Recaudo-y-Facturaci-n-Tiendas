@@ -1519,9 +1519,9 @@ function renderProyeccion() {
         {
           label: 'Proyección fin de mes',
           data: items.map(p => p.proyeccion),
-          backgroundColor: 'rgba(139, 92, 246, 0.18)',
-          borderColor: '#8B5CF6',
-          borderWidth: 2,
+          backgroundColor: 'rgba(139, 92, 246, 0.09)',
+          borderColor: 'rgba(139, 92, 246, 0.55)',
+          borderWidth: 1.5,
           borderRadius: 4,
           barPercentage: 0.82,
           categoryPercentage: 0.5,
@@ -1529,21 +1529,32 @@ function renderProyeccion() {
         }
       ]
     },
-    options: chartOpts({
-      indexAxis: 'y',
+    options: {
+      ...chartOpts({
+        indexAxis: 'y',
+        x: { ticks: { callback: v => fmtCOPshort(v), maxTicksLimit: 5 } }
+      }),
+      interaction: { mode: 'y', intersect: false },
       plugins: {
-        legend: { display: true },
+        legend: {
+          display: true,
+          position: 'top', align: 'end',
+          labels: {
+            color: 'rgba(255,255,255,0.7)',
+            font: { family: 'Manrope', size: 11 },
+            usePointStyle: true, pointStyle: 'circle', padding: 14
+          }
+        },
         tooltip: tooltipStyle({
-          label: c => `  ${c.dataset.label}: ${fmtCOP(c.parsed.x)}`
+          title: items => items[0]?.label || '',
+          label: c => {
+            const label = c.dataset.label || '';
+            const val   = c.parsed.x ?? 0;
+            return `  ${label}: ${fmtCOP(val)}`;
+          }
         })
-      },
-      x: {
-        ticks: {
-          callback: v => fmtCOPshort(v),
-          maxTicksLimit: 5
-        }
       }
-    })
+    }
   });
 }
 
