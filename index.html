@@ -870,11 +870,26 @@
     <div class="card glass">
       <div class="card-header">
         <div>
-          <div class="card-eyebrow">Negocios</div>
-          <div class="card-title">Por Origen de Producto</div>
+          <div class="card-eyebrow">Recaudos</div>
+          <div class="card-title">Distribución de Datáfonos por Tienda</div>
+        </div>
+        <div class="export-btns">
+          <button class="btn-export" id="btnCopyDatafonos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copiar
+          </button>
+          <button class="btn-export" id="btnExcelDatafonos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Excel
+          </button>
         </div>
       </div>
-      <div class="chart-wrap"><canvas id="chartOrigen"></canvas></div>
+      <div class="table-scroll">
+        <table class="compare-table" id="datafonosTable">
+          <thead><tr id="datafonosHead"></tr></thead>
+          <tbody id="datafonosBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -964,6 +979,7 @@ let _trendData   = null;
 let _mediosData  = null;
 let _catData     = null;
 let _compareData = null;
+let _datafonosData = null;
 
 const fmtCOP = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
 const fmtCOPshort = n => {
@@ -1188,7 +1204,7 @@ function renderAll() {
 
   renderTrend();
   renderMedios();
-  renderOrigen();
+  renderDatafonos();
   renderCategorias();
   renderCompare();
 }
@@ -1283,46 +1299,72 @@ function renderMedios() {
   });
 }
 
-function renderOrigen() {
-  const origenes = [
-    { k: 'MANUFACTURADOS', label: 'Manufacturados' },
-    { k: 'NACIONALES',     label: 'Nacionales' },
-    { k: 'IMPORTADOS',     label: 'Importados' }
-  ];
-  const data = origenes.map(o => FILTERED.reduce((a, r) => a + (r[o.k] || 0), 0));
+function renderDatafonos() {
+  // Build pivot: rows = Tienda, columns = unique values of "Distribución Datáfonos"
+  // Each cell = count of rows with that tienda+datáfono combination
+  const col = 'Distribución Datáfonos';
 
-  if (CHARTS.origen) CHARTS.origen.destroy();
-  CHARTS.origen = new Chart(document.getElementById('chartOrigen'), {
-    type: 'doughnut',
-    data: {
-      labels: origenes.map(o => o.label),
-      datasets: [{
-        data,
-        backgroundColor: ['#5BA3F5','#7DD3FC','#A78BFA'],
-        borderColor: 'rgba(5, 11, 24, 0.6)',
-        borderWidth: 3,
-        hoverOffset: 10
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '68%',
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: 'rgba(255,255,255,0.7)', font: { family: 'Manrope', size: 11 }, padding: 16, usePointStyle: true, pointStyle: 'circle' }
-        },
-        tooltip: tooltipStyle({
-          label: c => {
-            const total = c.dataset.data.reduce((a, b) => a + b, 0);
-            const pct   = total ? ((c.parsed / total) * 100).toFixed(1) : 0;
-            return `  ${fmtCOP(c.parsed)} · ${pct}%`;
-          }
-        })
-      }
-    }
+  // Gather all unique datáfono values (ignore blank)
+  const datafonosSet = new Set();
+  FILTERED.forEach(r => { if (r[col] && r[col].trim()) datafonosSet.add(r[col].trim()); });
+  const datafonos = [...datafonosSet].sort();
+
+  // Gather all unique tiendas
+  const tiendas = [...new Set(FILTERED.map(r => r.TIENDA))].sort();
+
+  // Build pivot counts
+  const pivot = {};
+  FILTERED.forEach(r => {
+    const t = r.TIENDA;
+    const d = r[col] ? r[col].trim() : '';
+    if (!d) return;
+    if (!pivot[t]) pivot[t] = {};
+    pivot[t][d] = (pivot[t][d] || 0) + 1;
   });
+
+  // Cache for export
+  _datafonosData = { tiendas, datafonos, pivot };
+
+  // Render thead
+  const thead = document.getElementById('datafonosHead');
+  thead.innerHTML = `<th>Tienda</th>` + datafonos.map(d => `<th>${d}</th>`).join('') + `<th>Total</th>`;
+
+  // Render tbody
+  const tbody = document.getElementById('datafonosBody');
+  if (!tiendas.length || !datafonos.length) {
+    tbody.innerHTML = `<tr><td colspan="${datafonos.length + 2}" class="empty-note">Sin datos de distribución de datáfonos</td></tr>`;
+    return;
+  }
+
+  // Column totals
+  const colTotals = {};
+  datafonos.forEach(d => { colTotals[d] = 0; });
+  let grandTotal = 0;
+
+  tbody.innerHTML = tiendas.map(t => {
+    const row = pivot[t] || {};
+    let rowTotal = 0;
+    const cells = datafonos.map(d => {
+      const v = row[d] || 0;
+      colTotals[d] += v;
+      rowTotal += v;
+      grandTotal += v;
+      return `<td>${v > 0 ? v : '<span style="color:var(--text-mute)">—</span>'}</td>`;
+    }).join('');
+    return `<tr>
+      <td><span class="badge">${t}</span></td>
+      ${cells}
+      <td style="color:var(--accent-2);font-weight:600">${rowTotal}</td>
+    </tr>`;
+  }).join('');
+
+  // Totals footer row (appended as last tbody row)
+  const totCells = datafonos.map(d => `<td style="color:var(--accent-2);font-weight:600">${colTotals[d] || 0}</td>`).join('');
+  tbody.innerHTML += `<tr style="border-top:1px solid var(--glass-border-strong);background:rgba(91,163,245,0.06)">
+    <td style="font-weight:700;color:var(--accent-2);font-family:var(--sans)">TOTAL</td>
+    ${totCells}
+    <td style="color:var(--accent-2);font-weight:700">${grandTotal}</td>
+  </tr>`;
 }
 
 function renderCategorias() {
@@ -1519,7 +1561,23 @@ function catRows() {
   return rows;
 }
 
-// Compare table data as rows (with totals)
+// Datafonos pivot as rows
+function datafonosRows() {
+  if (!_datafonosData) return [];
+  const { tiendas, datafonos, pivot } = _datafonosData;
+  const header = ['Tienda', ...datafonos, 'Total'];
+  const rows = [header];
+  const colTotals = Object.fromEntries(datafonos.map(d => [d, 0]));
+  let grand = 0;
+  tiendas.forEach(t => {
+    const row = pivot[t] || {};
+    let rowTotal = 0;
+    const cells = datafonos.map(d => { const v = row[d] || 0; colTotals[d] += v; rowTotal += v; grand += v; return v; });
+    rows.push([t, ...cells, rowTotal]);
+  });
+  rows.push(['TOTAL', ...datafonos.map(d => colTotals[d]), grand]);
+  return rows;
+}
 function compareRows() {
   if (!_compareData || !_compareData.length) return [];
   const rows = [['Tienda','Recaudos (COP)','Negocios (COP)','Visitas','Negocios','Ticket Prom. (COP)','Conversión (%)']];
@@ -1545,10 +1603,11 @@ function exportAll() {
   const add = (data, name) => {
     if (data.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
   };
-  add(trendRows(),   'Tendencia Diaria');
-  add(mediosRows(),  'Medios de Pago');
-  add(catRows(),     'Líneas de Producto');
-  add(compareRows(), 'Comparativo Tiendas');
+  add(trendRows(),      'Tendencia Diaria');
+  add(mediosRows(),     'Medios de Pago');
+  add(datafonosRows(),  'Distribución Datáfonos');
+  add(catRows(),        'Líneas de Producto');
+  add(compareRows(),    'Comparativo Tiendas');
 
   // Raw filtered data
   if (FILTERED.length) {
@@ -1562,6 +1621,10 @@ function exportAll() {
 
 // ── WIRE UP EXPORT BUTTONS ──
 function wireExports() {
+  // Datáfonos
+  document.getElementById('btnCopyDatafonos').onclick = function() { copyToClipboard(datafonosRows(), this); };
+  document.getElementById('btnExcelDatafonos').onclick = () => downloadExcel(datafonosRows(), 'Distribucion_Datafonos');
+
   // Trend
   document.getElementById('btnCopyTrend').onclick = function() { copyToClipboard(trendRows(), this); };
   document.getElementById('btnExcelTrend').onclick = () => downloadExcel(trendRows(), 'Tendencia_Diaria');
