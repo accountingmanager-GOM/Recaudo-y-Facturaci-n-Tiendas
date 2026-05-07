@@ -928,7 +928,15 @@
         <div class="card-eyebrow">Negocios · Proyección</div>
         <div class="card-title">Proyección de Negocios a Fin de Mes por Tienda</div>
       </div>
-      <span class="kpi-pill" id="proyeccionMeta" style="font-size:11px;padding:5px 12px;">—</span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="kpi-pill" id="proyeccionMeta" style="font-size:11px;padding:5px 12px;">—</span>
+        <div class="export-btns">
+          <button class="btn-export" id="btnExcelProy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Excel
+          </button>
+        </div>
+      </div>
     </div>
     <div class="chart-wrap tall"><canvas id="chartProyeccion"></canvas></div>
   </div>
@@ -999,7 +1007,8 @@ let _trendData   = null;
 let _mediosData  = null;
 let _catData     = null;
 let _compareData = null;
-let _datafonosData = null;
+let _datafonosData  = null;
+let _proyeccionData = null;
 
 const fmtCOP = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
 const fmtCOPshort = n => {
@@ -1460,6 +1469,16 @@ function renderProyeccion() {
       : 0
   }));
 
+  // Fila TOTAL
+  const totalNegMes = items.reduce((a, p) => a + p.negMes, 0);
+  const totalProy   = diasTranscurridos > 0
+    ? Math.round((totalNegMes / diasTranscurridos) * diasTotalesMes)
+    : 0;
+  const itemsConTotal = [...items, { tienda: 'TOTAL', negMes: totalNegMes, proyeccion: totalProy }];
+
+  // Guardar para exportación
+  _proyeccionData = { items: itemsConTotal, diasTranscurridos, diasTotalesMes, currentMonth };
+
   // Pill informativa
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('proyeccionMeta').textContent =
@@ -1468,34 +1487,45 @@ function renderProyeccion() {
   if (CHARTS.proyeccion) CHARTS.proyeccion.destroy();
 
   if (!items.length) {
-    if (CHARTS.proyeccion) CHARTS.proyeccion.destroy();
     CHARTS.proyeccion = null;
     return;
   }
 
+  // Colores: tiendas en azul/amarillo, TOTAL en tono diferenciado
+  const bgReal = itemsConTotal.map(p =>
+    p.tienda === 'TOTAL' ? 'rgba(74, 222, 128, 0.75)' : '#5BA3F5'
+  );
+  const bgProy = itemsConTotal.map(p =>
+    p.tienda === 'TOTAL' ? 'rgba(74, 222, 128, 0.15)' : 'rgba(251, 191, 36, 0.18)'
+  );
+  const bdProy = itemsConTotal.map(p =>
+    p.tienda === 'TOTAL' ? '#4ADE80' : '#FBBF24'
+  );
+
   CHARTS.proyeccion = new Chart(document.getElementById('chartProyeccion'), {
     type: 'bar',
     data: {
-      labels: items.map(p => p.tienda),
+      labels: itemsConTotal.map(p => p.tienda),
       datasets: [
         {
           label: 'Negocios reales (acumulado mes)',
-          data: items.map(p => p.negMes),
-          backgroundColor: '#5BA3F5',
+          data: itemsConTotal.map(p => p.negMes),
+          backgroundColor: bgReal,
           borderRadius: 6,
-          barThickness: 40,
+          barPercentage: 0.7,
+          categoryPercentage: 0.75,
           order: 2
         },
         {
           label: 'Proyección fin de mes',
-          data: items.map(p => p.proyeccion),
-          backgroundColor: 'rgba(251, 191, 36, 0.18)',
-          borderColor: '#FBBF24',
+          data: itemsConTotal.map(p => p.proyeccion),
+          backgroundColor: bgProy,
+          borderColor: bdProy,
           borderWidth: 2,
           borderRadius: 6,
-          barThickness: 40,
-          order: 1,
-          type: 'bar'
+          barPercentage: 0.7,
+          categoryPercentage: 0.75,
+          order: 1
         }
       ]
     },
@@ -1721,6 +1751,7 @@ function exportAll() {
   add(mediosRows(),     'Medios de Pago');
   add(datafonosRows(),  'Distribución Datáfonos');
   add(catRows(),        'Líneas de Producto');
+  add(proyeccionRows(), 'Proyección Mes Actual');
   add(compareRows(),    'Comparativo Tiendas');
 
   // Raw filtered data
@@ -1734,7 +1765,24 @@ function exportAll() {
 }
 
 // ── WIRE UP EXPORT BUTTONS ──
+function proyeccionRows() {
+  if (!_proyeccionData) return [];
+  const { items, diasTranscurridos, diasTotalesMes } = _proyeccionData;
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const header = [
+    `Proyección · Día ${diasTranscurridos} de ${diasTotalesMes} · ${meses[_proyeccionData.currentMonth]}`,
+    '', '', ''
+  ];
+  const cols = ['Tienda', 'Negocios reales mes (COP)', 'Proyección fin de mes (COP)', 'Días base'];
+  const rows = [header, cols];
+  items.forEach(p => rows.push([p.tienda, p.negMes, p.proyeccion, diasTranscurridos]));
+  return rows;
+}
+
 function wireExports() {
+  // Proyección
+  document.getElementById('btnExcelProy').onclick = () => downloadExcel(proyeccionRows(), 'Proyeccion_Mes_Actual');
+
   // Datáfonos
   document.getElementById('btnCopyDatafonos').onclick = function() { copyToClipboard(datafonosRows(), this); };
   document.getElementById('btnExcelDatafonos').onclick = () => downloadExcel(datafonosRows(), 'Distribucion_Datafonos');
