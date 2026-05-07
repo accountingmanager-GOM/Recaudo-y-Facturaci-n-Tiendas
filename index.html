@@ -638,23 +638,106 @@
     text-transform: uppercase;
   }
 
+  /* ── TABLE SCROLL WRAPPER ── */
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .table-scroll::-webkit-scrollbar { height: 4px; }
+  .table-scroll::-webkit-scrollbar-track { background: transparent; }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
+
+  /* ── TABLET ── */
   @media (max-width: 1100px) {
     .kpi-grid { grid-template-columns: repeat(3, 1fr); }
     .kpi.featured { grid-column: span 3; }
     .grid-2 { grid-template-columns: 1fr; }
   }
 
+  /* ── MOBILE ── */
   @media (max-width: 720px) {
-    .app { padding: 22px 18px; }
-    .header { flex-direction: column; align-items: flex-start; gap: 18px; }
-    .brand h1 { font-size: 32px; }
-    .filter-row { padding: 14px; flex-direction: column; align-items: stretch; border-radius: 22px; }
-    .filter-block + .filter-block { padding-left: 0; border-left: none; padding-top: 14px; border-top: 1px solid var(--glass-border); }
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    /* Layout */
+    .app { padding: 16px 14px 48px; }
+    .header { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .brand h1 { font-size: 28px; }
+    .brand .eyebrow { font-size: 9px; }
+
+    /* Filters */
+    .filter-row {
+      padding: 14px;
+      flex-direction: column;
+      align-items: stretch;
+      border-radius: 18px;
+      gap: 14px;
+    }
+    .filter-block { flex-direction: column; gap: 8px; }
+    .filter-block + .filter-block {
+      padding-left: 0;
+      border-left: none;
+      padding-top: 14px;
+      border-top: 1px solid var(--glass-border);
+    }
+    .filter-group {
+      flex-wrap: wrap;
+      border-radius: 14px;
+      padding: 4px;
+    }
+    .filter-btn { font-size: 11px; padding: 5px 10px; }
+    .filter-check-group { flex-wrap: wrap; }
+    .filter-check-label { font-size: 11px; padding: 5px 10px; }
+    .date-row { flex-wrap: wrap; gap: 6px; }
+    .date-input { font-size: 11px; width: 100%; }
+
+    /* KPIs */
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
     .kpi.featured { grid-column: span 2; }
-    .kpi.featured .kpi-value { font-size: 32px; }
-    .compare-table { font-size: 11px; }
-    .compare-table thead th, .compare-table tbody td { padding: 10px 6px; }
+    .kpi.featured .kpi-value { font-size: 28px; }
+    .kpi-value { font-size: 22px; }
+    .kpi { padding: 16px; gap: 8px; }
+    .kpi-label { font-size: 9px; }
+    .kpi-meta { font-size: 9px; }
+
+    /* Section titles */
+    .section-title { flex-direction: column; gap: 4px; margin: 20px 0 12px; }
+    .section-title h2 { font-size: 18px; }
+
+    /* Cards */
+    .card { padding: 16px; }
+    .card-header { margin-bottom: 14px; padding-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+    .card-title { font-size: 14px; }
+
+    /* Export buttons */
+    .export-btns { flex-wrap: wrap; gap: 6px; }
+    .btn-export { font-size: 9px; padding: 5px 10px; }
+    .btn-export svg { width: 11px; height: 11px; }
+
+    /* Charts */
+    .chart-wrap { height: 220px; }
+    .chart-wrap.tall { height: 260px; }
+
+    /* Grid 2 col → 1 col */
+    .grid-2 { grid-template-columns: 1fr; gap: 14px; }
+
+    /* Table */
+    .compare-table { font-size: 11px; min-width: 520px; }
+    .compare-table thead th,
+    .compare-table tbody td,
+    .compare-table tfoot td { padding: 10px 8px; }
+    .compare-table thead th { font-size: 8px; letter-spacing: 0.1em; }
+    .badge { font-size: 9px; padding: 2px 7px; }
+
+    /* Footer */
+    .footer { flex-direction: column; gap: 6px; text-align: center; font-size: 9px; }
+  }
+
+  /* ── VERY SMALL ── */
+  @media (max-width: 380px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .kpi.featured { grid-column: span 1; }
+    .brand h1 { font-size: 24px; }
   }
 </style>
 </head>
@@ -837,21 +920,23 @@
         </button>
       </div>
     </div>
-    <table class="compare-table" id="compareTable">
-      <thead>
-        <tr>
-          <th>Tienda</th>
-          <th>Recaudos</th>
-          <th>Negocios (COP)</th>
-          <th>Visitas</th>
-          <th>Negocios</th>
-          <th>Ticket Prom.</th>
-          <th>Conversión</th>
-        </tr>
-      </thead>
-      <tbody id="compareBody"></tbody>
-      <tfoot id="compareFoot"></tfoot>
-    </table>
+      <div class="table-scroll">
+      <table class="compare-table" id="compareTable">
+        <thead>
+          <tr>
+            <th>Tienda</th>
+            <th>Recaudos</th>
+            <th>Negocios (COP)</th>
+            <th>Visitas</th>
+            <th>Negocios</th>
+            <th>Ticket Prom.</th>
+            <th>Conversión</th>
+          </tr>
+        </thead>
+        <tbody id="compareBody"></tbody>
+        <tfoot id="compareFoot"></tfoot>
+      </table>
+      </div>
   </div>
 
   <footer class="footer">
