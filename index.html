@@ -919,6 +919,21 @@
   </div>
 
   <div class="section-title">
+    <h2>Proyección <em>Mes Actual</em></h2>
+    <span class="hint">Ritmo actual extrapolado</span>
+  </div>
+  <div class="card glass" style="margin-bottom: 28px;">
+    <div class="card-header">
+      <div>
+        <div class="card-eyebrow">Negocios · Proyección</div>
+        <div class="card-title">Proyección de Negocios a Fin de Mes por Tienda</div>
+      </div>
+      <span class="kpi-pill" id="proyeccionMeta" style="font-size:11px;padding:5px 12px;">—</span>
+    </div>
+    <div class="chart-wrap tall"><canvas id="chartProyeccion"></canvas></div>
+  </div>
+
+  <div class="section-title">
     <h2>Comparativo por <em>Tienda</em></h2>
     <span class="hint">Rendimiento agregado</span>
   </div>
@@ -1211,6 +1226,7 @@ function renderAll() {
   renderMedios();
   renderDatafonos();
   renderCategorias();
+  renderProyeccion();
   renderCompare();
 }
 
@@ -1405,6 +1421,93 @@ function renderCategorias() {
       }]
     },
     options: chartOpts({ plugins: { legend: { display: false } }, y: { ticks: { callback: v => fmtCOPshort(v) } } })
+  });
+}
+
+function renderProyeccion() {
+  const now              = new Date();
+  const currentYear      = now.getFullYear();
+  const currentMonth     = now.getMonth();
+  const diasTranscurridos = now.getDate();
+  const diasTotalesMes   = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const diasRestantes    = diasTotalesMes - diasTranscurridos;
+
+  // Siempre usa el mes actual de RAW, pero respeta filtros de empresa/tienda
+  let data = [...RAW];
+  if (FILTERS.empresas.size > 0) data = data.filter(r => FILTERS.empresas.has(r.EMPRESA));
+  if (FILTERS.tiendas.size  > 0) data = data.filter(r => FILTERS.tiendas.has(r.TIENDA));
+  data = data.filter(r =>
+    r._fecha.getMonth()    === currentMonth &&
+    r._fecha.getFullYear() === currentYear
+  );
+
+  // Agrupar por tienda
+  const groups = {};
+  data.forEach(r => {
+    const t = r.TIENDA;
+    if (!groups[t]) groups[t] = { tienda: t, negMes: 0 };
+    groups[t].negMes += r['TOTAL FACTURACIÓN'];
+  });
+
+  const tiendas = Object.values(groups).sort((a, b) => b.negMes - a.negMes);
+
+  // Calcular proyección: (negMes / diasTranscurridos) * diasTotalesMes
+  const items = tiendas.map(g => ({
+    tienda:     g.tienda,
+    negMes:     g.negMes,
+    proyeccion: diasTranscurridos > 0
+      ? Math.round((g.negMes / diasTranscurridos) * diasTotalesMes)
+      : 0
+  }));
+
+  // Pill informativa
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('proyeccionMeta').textContent =
+    `Día ${diasTranscurridos} de ${diasTotalesMes} · ${meses[currentMonth]} · Faltan ${diasRestantes} días`;
+
+  if (CHARTS.proyeccion) CHARTS.proyeccion.destroy();
+
+  if (!items.length) {
+    if (CHARTS.proyeccion) CHARTS.proyeccion.destroy();
+    CHARTS.proyeccion = null;
+    return;
+  }
+
+  CHARTS.proyeccion = new Chart(document.getElementById('chartProyeccion'), {
+    type: 'bar',
+    data: {
+      labels: items.map(p => p.tienda),
+      datasets: [
+        {
+          label: 'Negocios reales (acumulado mes)',
+          data: items.map(p => p.negMes),
+          backgroundColor: '#5BA3F5',
+          borderRadius: 6,
+          barThickness: 40,
+          order: 2
+        },
+        {
+          label: 'Proyección fin de mes',
+          data: items.map(p => p.proyeccion),
+          backgroundColor: 'rgba(251, 191, 36, 0.18)',
+          borderColor: '#FBBF24',
+          borderWidth: 2,
+          borderRadius: 6,
+          barThickness: 40,
+          order: 1,
+          type: 'bar'
+        }
+      ]
+    },
+    options: chartOpts({
+      plugins: {
+        legend: { display: true },
+        tooltip: tooltipStyle({
+          label: c => `  ${c.dataset.label}: ${fmtCOP(c.parsed.y)}`
+        })
+      },
+      y: { ticks: { callback: v => fmtCOPshort(v) } }
+    })
   });
 }
 
